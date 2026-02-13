@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WorldMonitor.app - Emlak Portföy Yönetimi</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            background: linear-gradient(135deg, #0a0e1a 0%, #1a1f2e 50%, #0a0e1a 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        #root {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Background Effects */
+        .bg-orb {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(100px);
+            opacity: 0.12;
+            pointer-events: none;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        .orb-1 {
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, #00ff88, transparent);
+            top: -200px;
+            right: -200px;
+        }
+
+        .orb-2 {
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, #00d4ff, transparent);
+            bottom: -150px;
+            left: -150px;
+            animation-delay: -10s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(50px, -50px) scale(1.1); }
+            66% { transform: translate(-50px, 50px) scale(0.9); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Container */
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 3rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .logo {
+            font-family: 'Courier New', monospace;
+            font-size: 1.75rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #00ff88, #00d4ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo-dot {
+            color: #00ff88;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .subtitle {
+            font-size: 0.875rem;
+            color: #8b92a7;
+            margin-top: 0.25rem;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .ai-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-family: 'Courier New', monospace;
+        }
+
+        .ai-dot {
+            width: 8px;
+            height: 8px;
+            background: #00ff88;
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .user-name {
+            font-size: 0.875rem;
+            color: #8b92a7;
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(26, 31, 46, 0.5);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1rem;
+            padding: 1.75rem;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            border-color: #00ff88;
+            transform: translateY(-4px);
+            box-shadow: 0 8px 32px rgba(0, 255, 136, 0.2);
+        }
+
+        .stat-label {
+            font-size: 0.875rem;
+            color: #8b92a7;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.75rem;
+        }
+
+        .stat-value {
+            font-size: 2.25rem;
+            font-family: 'Courier New', monospace;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-change {
+            display: inline-flex;
+            align-items: center;
+            font-size: 0.875rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.5rem;
+        }
+
+        .stat-change.positive {
+            background: rgba(0, 255, 136, 0.1);
+            color: #00ff88;
+        }
+
+        .stat-change.negative {
+            background: rgba(255, 170, 0, 0.1);
+            color: #ffaa00;
+        }
+
+        /* Main Grid */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .card {
+            background: rgba(26, 31, 46, 0.5);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1rem;
+            padding: 2rem;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .title-bar {
+            width: 4px;
+            height: 24px;
+            background: #00ff88;
+            border-radius: 2px;
+        }
+
+        .badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.75rem;
+            background: linear-gradient(135deg, #00ff88, #00d4ff);
+            color: #0a0e1a;
+            border-radius: 12px;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+        }
+
+        /* Property List */
+        .property-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .property-item {
+            display: grid;
+            grid-template-columns: 80px 1fr auto;
+            gap: 1rem;
+            padding: 1rem;
+            background: rgba(20, 24, 36, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 0.75rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .property-item:hover {
+            border-color: rgba(0, 255, 136, 0.5);
+            transform: translateX(4px);
+        }
+
+        .property-img {
+            width: 80px;
+            height: 80px;
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            flex-shrink: 0;
+        }
+
+        .gradient-purple { background: linear-gradient(135deg, #667eea, #764ba2); }
+        .gradient-pink { background: linear-gradient(135deg, #f093fb, #f5576c); }
+        .gradient-cyan { background: linear-gradient(135deg, #4facfe, #00f2fe); }
+
+        .property-info {
+            min-width: 0;
+        }
+
+        .property-title {
+            font-size: 0.9375rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .property-location {
+            font-size: 0.8125rem;
+            color: #8b92a7;
+            margin-bottom: 0.5rem;
+        }
+
+        .property-tags {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 0.25rem;
+            color: #8b92a7;
+        }
+
+        .property-price {
+            font-family: 'Courier New', monospace;
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: #00ff88;
+            white-space: nowrap;
+        }
+
+        /* Insights */
+        .insights-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .insight-item {
+            padding: 1.25rem;
+            background: rgba(20, 24, 36, 0.5);
+            border-left: 4px solid #00ff88;
+            border-radius: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .insight-item:hover {
+            background: rgba(0, 255, 136, 0.05);
+            transform: translateX(4px);
+        }
+
+        .insight-title {
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: #00ff88;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .insight-text {
+            font-size: 0.8125rem;
+            line-height: 1.6;
+            color: #cbd5e1;
+        }
+
+        .loading-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 3rem 0;
+        }
+
+        .spinner {
+            width: 32px;
+            height: 32px;
+            border: 4px solid rgba(0, 255, 136, 0.2);
+            border-top-color: #00ff88;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        /* Buttons */
+        .actions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+        }
+
+        .btn {
+            padding: 1rem 1.5rem;
+            border: none;
+            border-radius: 0.75rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #00ff88, #00d4ff);
+            color: #0a0e1a;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: scale(1.05);
+            box-shadow: 0 8px 24px rgba(0, 255, 136, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(20, 24, 36, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            border-color: rgba(0, 255, 136, 0.5);
+            background: rgba(20, 24, 36, 1);
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            z-index: 1000;
+        }
+
+        .modal-content {
+            background: #1a1f2e;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 1rem;
+            padding: 2rem;
+            max-width: 800px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: #8b92a7;
+            font-size: 2rem;
+            cursor: pointer;
+            padding: 0;
+            line-height: 1;
+            transition: color 0.3s ease;
+        }
+
+        .modal-close:hover {
+            color: #00ff88;
+        }
+
+        .modal-body {
+            color: #cbd5e1;
+            line-height: 1.8;
+            white-space: pre-line;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .stats-grid {
+                grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            }
+
+            .property-item {
+                grid-template-columns: 60px 1fr;
+            }
+
+            .property-price {
+                grid-column: 2;
+                margin-top: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-orb orb-1"></div>
+    <div class="bg-orb orb-2"></div>
+    
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const MOCK_DATA = {
+          stats: {
+            totalProperties: 47,
+            totalValue: 89.5,
+            activeListings: 32,
+            totalViews: 2847,
+            newThisMonth: 5,
+            valueChange: 12.3,
+            listingsChange: -3,
+            viewsChange: 18.7
+          },
+          properties: [
+            {
+              id: 1,
+              title: '3+1 Deniz Manzaralı Daire',
+              location: 'Kadıköy, Fenerbahçe',
+              size: 165,
+              price: 8.9,
+              aiScore: 94,
+              views: 487,
+              favorites: 12,
+              gradient: 'gradient-purple',
+              emoji: '🏢'
+            },
+            {
+              id: 2,
+              title: 'Villa - Büyükada',
+              location: 'Büyükada, Merkez',
+              size: 320,
+              price: 18.5,
+              aiScore: 91,
+              views: 356,
+              favorites: 8,
+              gradient: 'gradient-pink',
+              emoji: '🏡'
+            },
+            {
+              id: 3,
+              title: '2+1 Yeni Bina',
+              location: 'Moda, Bahariye',
+              size: 110,
+              price: 5.2,
+              aiScore: 88,
+              views: 298,
+              favorites: 15,
+              gradient: 'gradient-cyan',
+              emoji: '🏠'
+            }
+          ]
+        };
+
+        function WorldMonitorDashboard() {
+          const [data, setData] = useState(MOCK_DATA);
+          const [insights, setInsights] = useState([]);
+          const [loading, setLoading] = useState({ insights: true, report: false, optimize: false, match: false });
+          const [modal, setModal] = useState({ show: false, title: '', content: '' });
+          const [aiStatus, setAiStatus] = useState('AI AKTIF');
+
+          useEffect(() => {
+            loadAIInsights();
+          }, []);
+
+          const callClaudeAPI = async (prompt, context = {}) => {
+            setAiStatus('AI ÇALIŞIYOR...');
+            
+            try {
+              const response = await fetch("https://api.anthropic.com/v1/messages", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  model: "claude-sonnet-4-20250514",
+                  max_tokens: 1000,
+                  messages: [
+                    { 
+                      role: "user", 
+                      content: `Sen bir emlak portföy yönetim AI asistanısın. Türkiye emlak piyasasına hakimsin.
+
+Context: ${JSON.stringify(context)}
+
+Görev: ${prompt}
+
+Lütfen Türkçe, profesyonel ve özgün bir yanıt ver. Her bölümü net ayır.` 
+                    }
+                  ],
+                })
+              });
+
+              const result = await response.json();
+              const text = result.content
+                .filter(item => item.type === "text")
+                .map(item => item.text)
+                .join("\n");
+
+              setAiStatus('AI AKTIF');
+              return text;
+            } catch (error) {
+              console.error('Claude API Error:', error);
+              setAiStatus('AI HATA');
+              return 'AI servisi şu anda kullanılamıyor. Lütfen daha sonra tekrar deneyin.';
+            }
+          };
+
+          const loadAIInsights = async () => {
+            setLoading(prev => ({ ...prev, insights: true }));
+            
+            const result = await callClaudeAPI(
+              `Bir emlakçı için portföy analizi yap ve 4 farklı kategoride pratik öneri ver:
+              1. Fiyatlandırma Önerisi (konkret rakamlarla)
+              2. Pazar Analizi (trend ve fırsatlar)
+              3. Acil Aksiyon (yapılması gerekenler)
+              4. Yatırım Fırsatı (bölge önerileri)
+              
+              Her öneri 2-3 cümle olsun, rakam ve somut detay içersin.`,
+              data
+            );
+
+            const sections = result.split('\n').filter(s => s.trim() && s.length > 20);
+            const icons = ['🎯', '📊', '⚡', '💡'];
+            const titles = ['Fiyatlandırma Önerisi', 'Pazar Analizi', 'Acil Aksiyon', 'Yatırım Fırsatı'];
+            
+            const parsedInsights = sections.slice(0, 4).map((text, idx) => ({
+              icon: icons[idx],
+              title: titles[idx],
+              text: text.replace(/^\d+\.\s*/, '').replace(/^[🎯📊⚡💡]\s*/, '').trim()
+            }));
+            
+            setInsights(parsedInsights);
+            setLoading(prev => ({ ...prev, insights: false }));
+          };
+
+          const generateReport = async () => {
+            setLoading(prev => ({ ...prev, report: true }));
+            
+            const report = await callClaudeAPI(
+              `Emlak portföyü için kapsamlı bir aylık performans raporu hazırla. Şunları içersin:
+              - Executive Summary (2-3 cümle)
+              - Portföy Performans Analizi (sayılarla)
+              - En İyi ve En Kötü Performans Gösteren İlanlar
+              - Gelecek Ay İçin Stratejik Öneriler (3-4 madde)
+              
+              Profesyonel ama samimi bir dil kullan. Her bölümü paragraf olarak ayır.`,
+              data
+            );
+
+            setModal({ show: true, title: '📊 AI Portföy Raporu', content: report });
+            setLoading(prev => ({ ...prev, report: false }));
+          };
+
+          const optimizeListings = async () => {
+            setLoading(prev => ({ ...prev, optimize: true }));
+            
+            const optimization = await callClaudeAPI(
+              `En popüler 3 emlak ilanı için optimizasyon önerileri ver. Her ilan için şunları analiz et:
+              1. Başlık iyileştirme önerisi (SEO uyumlu)
+              2. Açıklama optimizasyonu (ilgi çekici, detaylı)
+              3. Fotoğraf stratejisi
+              4. Fiyat konumlandırması
+              
+              Konkret ve uygulanabilir öneriler ver. Her ilanı net ayır.`,
+              { properties: data.properties }
+            );
+
+            setModal({ show: true, title: '✨ İlan Optimizasyon Önerileri', content: optimization });
+            setLoading(prev => ({ ...prev, optimize: false }));
+          };
+
+          const matchClients = async () => {
+            setLoading(prev => ({ ...prev, match: true }));
+            
+            const matching = await callClaudeAPI(
+              `Emlak portföyü ve müşteri profilleri için AI eşleştirme analizi yap. 
+              
+              Varsayımsal senaryolar oluştur:
+              - 5 farklı müşteri profili (genç çift, yatırımcı, emekli, tek kişi, aile)
+              - ${data.stats.totalProperties} ilanla eşleştir
+              
+              En yüksek 5 eşleşme için:
+              - Müşteri profili
+              - Hangi ilan
+              - Eşleşme skoru (%X)
+              - Neden uygun
+              - İletişim stratejisi önerisi
+              
+              Her eşleşmeyi ayrı paragraf yap. Rakamsal ve somut ol.`,
+              data
+            );
+
+            setModal({ show: true, title: '🎯 AI Müşteri-Emlak Eşleştirme', content: matching });
+            setLoading(prev => ({ ...prev, match: false }));
+          };
+
+          return (
+            <div className="container">
+              <header className="header">
+                <div>
+                  <div className="logo">
+                    worldmonitor<span className="logo-dot">.</span>app
+                  </div>
+                  <div className="subtitle">Emlak Portföy Yönetimi</div>
+                </div>
+                <div className="header-right">
+                  <div className="ai-status">
+                    <div className="ai-dot"></div>
+                    {aiStatus}
+                  </div>
+                  <div className="user-name">Ahmet Yılmaz</div>
+                </div>
+              </header>
+
+              <div className="stats-grid">
+                <StatCard label="Toplam Portföy" value={data.stats.totalProperties} change={`↑ ${data.stats.newThisMonth} yeni bu ay`} positive />
+                <StatCard label="Portföy Değeri" value={`₺${data.stats.totalValue}M`} change={`↑ %${data.stats.valueChange}`} positive />
+                <StatCard label="Aktif İlanlar" value={data.stats.activeListings} change={`↓ ${Math.abs(data.stats.listingsChange)} son hafta`} positive={false} />
+                <StatCard label="Görüntülenme" value={data.stats.totalViews.toLocaleString('tr-TR')} change={`↑ %${data.stats.viewsChange}`} positive />
+              </div>
+
+              <div className="main-grid">
+                <div className="card">
+                  <div className="card-header">
+                    <div className="card-title">
+                      <div className="title-bar"></div>
+                      En Popüler İlanlar
+                    </div>
+                    <div className="badge">AI SKORLU</div>
+                  </div>
+
+                  <div className="property-list">
+                    {data.properties.map(prop => (
+                      <div key={prop.id} className="property-item">
+                        <div className={`property-img ${prop.gradient}`}>
+                          {prop.emoji}
+                        </div>
+                        <div className="property-info">
+                          <div className="property-title">{prop.title}</div>
+                          <div className="property-location">{prop.location} • {prop.size} m²</div>
+                          <div className="property-tags">
+                            <span className="tag">AI Skor: {prop.aiScore}/100</span>
+                            <span className="tag">{prop.views} görüntülenme</span>
+                            <span className="tag">{prop.favorites} favori</span>
+                          </div>
+                        </div>
+                        <div className="property-price">₺{prop.price}M</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="card">
+                  <div className="card-header">
+                    <div className="card-title">
+                      <div className="title-bar"></div>
+                      AI Öneriler
+                    </div>
+                    <div className="badge">CLAUDE SONNET 4</div>
+                  </div>
+
+                  <div className="insights-list">
+                    {loading.insights ? (
+                      <div className="loading-container">
+                        <div className="spinner"></div>
+                      </div>
+                    ) : (
+                      insights.map((insight, idx) => (
+                        <div key={idx} className="insight-item">
+                          <div className="insight-title">
+                            <span>{insight.icon}</span>
+                            <span>{insight.title}</span>
+                          </div>
+                          <div className="insight-text">{insight.text}</div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="actions-grid">
+                <button onClick={generateReport} disabled={loading.report} className="btn btn-primary">
+                  {loading.report ? <div className="spinner" style={{width: '20px', height: '20px', borderWidth: '3px'}}></div> : '📄'}
+                  AI Rapor Oluştur
+                </button>
+
+                <button onClick={optimizeListings} disabled={loading.optimize} className="btn btn-secondary">
+                  {loading.optimize ? <div className="spinner" style={{width: '20px', height: '20px', borderWidth: '3px'}}></div> : '✨'}
+                  İlanları Optimize Et
+                </button>
+
+                <button onClick={matchClients} disabled={loading.match} className="btn btn-secondary">
+                  {loading.match ? <div className="spinner" style={{width: '20px', height: '20px', borderWidth: '3px'}}></div> : '🎯'}
+                  Müşteri Eşleştir
+                </button>
+              </div>
+
+              {modal.show && (
+                <div className="modal-overlay" onClick={() => setModal({ show: false, title: '', content: '' })}>
+                  <div className="modal-content" onClick={e => e.stopPropagation()}>
+                    <div className="modal-header">
+                      <div className="modal-title">{modal.title}</div>
+                      <button className="modal-close" onClick={() => setModal({ show: false, title: '', content: '' })}>×</button>
+                    </div>
+                    <div className="modal-body">{modal.content}</div>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        }
+
+        function StatCard({ label, value, change, positive }) {
+          return (
+            <div className="stat-card">
+              <div className="stat-label">{label}</div>
+              <div className="stat-value">{value}</div>
+              <div className={`stat-change ${positive ? 'positive' : 'negative'}`}>
+                {change}
+              </div>
+            </div>
+          );
+        }
+
+        ReactDOM.render(<WorldMonitorDashboard />, document.getElementById('root'));
+    </script>
+</body>
+</html>
